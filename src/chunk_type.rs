@@ -86,7 +86,8 @@ impl FromStr for ChunkType {
             .iter()
             .all(|ch| ch.is_alphabetic());
         if allalpha {
-            Ok(ChunkType { bits })
+            let chunk_type = ChunkType { bits };
+            Ok(chunk_type)
         } else {
             Err(Box::new(InvalidChunkType::new()))
         }

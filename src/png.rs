@@ -1,5 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
+use std::fs;
 use std::io::{BufReader, Read};
+use std::path::Path;
 use std::str::FromStr;
 use crate::chunk::Chunk;
 use crate::chunk_type::ChunkType;
@@ -7,7 +9,7 @@ use crate::Error;
 use crate::Result;
 
 #[derive(Debug, Clone)]
-struct Png {
+pub struct Png {
     header: [u8; 8],
     chunks: Vec<Chunk>,
 }
@@ -30,6 +32,7 @@ impl Display for NoSuchChunk {
 
 impl std::error::Error for NoSuchChunk {}
 
+#[allow(dead_code)]
 impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
@@ -39,12 +42,15 @@ impl Png {
             chunks,
         }
     }
+    pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
+        fs::read(path)?.as_slice().try_into()
+    }
 
-    fn append_chunk(&mut self, chunk: Chunk) {
+    pub fn append_chunk(&mut self, chunk: Chunk) {
         self.chunks.push(chunk);
     }
 
-    fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
+    pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
         for (i, x) in self.chunks.iter().enumerate() {
             if x.chunk_type().to_string() == chunk_type {
                 return Ok(self.chunks.remove(i));
@@ -58,11 +64,11 @@ impl Png {
         &self.header
     }
 
-    fn chunks(&self) -> &[Chunk] {
+    pub fn chunks(&self) -> &[Chunk] {
         &self.chunks
     }
 
-    fn chunk_by_type(&self, chunk_type: &str) -> Option<Chunk> {
+    pub fn chunk_by_type(&self, chunk_type: &str) -> Option<Chunk> {
         ChunkType::from_str(chunk_type)
             .ok()
             .and_then(|to_find| {
@@ -72,7 +78,7 @@ impl Png {
             })
     }
 
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         self.header().iter()
             .copied()
             .chain(

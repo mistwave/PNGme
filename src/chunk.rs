@@ -63,10 +63,10 @@ impl Chunk {
     }
 
     pub fn as_bytes(&self) -> Vec<u8> {
-        self.length.to_be_bytes().iter()
+        self.length().to_be_bytes().iter()
             .chain(self.chunk_type.bytes().iter())
             .chain(self.data().iter())
-            .chain(self.crc.to_be_bytes().iter())
+            .chain(self.crc().to_be_bytes().iter())
             .copied()
             .collect()
     }
@@ -95,8 +95,13 @@ impl TryFrom<&[u8]> for Chunk {
 
         reader.read_exact(&mut buf)?;
         let chunk_type: ChunkType = buf.to_owned().try_into()?;
+        if !chunk_type.is_valid() {
+            return Err(
+                Box::new(InvalidChunk {})
+            );
+        }
 
-        let mut data_buf= vec![0; length as usize];
+        let mut data_buf = vec![0; length as usize];
         reader.read_exact(data_buf.as_mut_slice())?;
 
         reader.read_exact(&mut buf)?;
